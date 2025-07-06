@@ -1,5 +1,9 @@
+import 'package:chat_me/screens/auth/login_screen.dart';
 import 'package:chat_me/screens/home_screen.dart';
 import 'package:flutter/material.dart';
+
+//global object for accessing device screen size
+late Size mq; //media query must be initialized in build function whose parent class must be Material App
 
 void main() {
   runApp(const MyApp());
@@ -17,12 +21,11 @@ class MyApp extends StatelessWidget {
         appBarTheme: AppBarTheme(
           iconTheme: IconThemeData(color: Colors.black),
           centerTitle: true,
-      titleTextStyle: TextStyle(color: Colors.black, fontSize: 19),
-      backgroundColor: Colors.white,
-        )
+          titleTextStyle: TextStyle(color: Colors.black, fontSize: 19),
+          backgroundColor: Colors.white,
+        ),
       ),
-      home: HomeScreen(),
+      home: LoginScreen()
     );
   }
 }
-
