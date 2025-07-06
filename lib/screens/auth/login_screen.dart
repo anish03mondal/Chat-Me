@@ -1,4 +1,5 @@
 import 'package:chat_me/main.dart';
+import 'package:chat_me/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -9,6 +10,18 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  bool _isAnimate = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: 500), () {
+      setState(() {
+        _isAnimate = true;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     mq = MediaQuery.of(context).size;
@@ -26,10 +39,15 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         body: Stack(
           children: [
-            Positioned(
+            AnimatedPositioned(
+              // works only with stack widget
               top: mq.height * .15,
-              left: mq.width * .25,
+              right: _isAnimate
+                  ? mq.width * .25
+                  : -mq.width *
+                        .5, //this will move the image from extreme right to center
               width: mq.width * .5,
+              duration: Duration(seconds: 1),
               child: Image.asset('images/meetme.png'),
             ),
             Positioned(
@@ -38,7 +56,9 @@ class _LoginScreenState extends State<LoginScreen> {
               width: mq.width * .9,
               height: mq.height * .07,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  signInButton(context);
+                },
                 icon: Image.asset('images/google.png', height: mq.height * .04),
                 label: const Text(
                   'Sign with Google',
@@ -65,20 +85,23 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image.asset(
-                    'images/meetme.png',
-                    width: 250,
-                  ),
+                  Image.asset('images/meetme.png', width: 250),
                   const SizedBox(height: 60),
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        signInButton(context);
+                      },
                       icon: Image.asset('images/google.png', height: 24),
                       label: const Text(
                         'Sign with Google',
-                        style: TextStyle(fontSize: 18, color: Colors.black, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         //backgroundColor: Colors.blueAccent,
@@ -93,5 +116,12 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     }
+  }
+
+  void signInButton(BuildContext context) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => HomeScreen()),
+    );
   }
 }

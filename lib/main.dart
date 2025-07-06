@@ -1,11 +1,15 @@
 import 'package:chat_me/screens/auth/login_screen.dart';
 import 'package:chat_me/screens/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 //global object for accessing device screen size
-late Size mq; //media query must be initialized in build function whose parent class must be Material App
+late Size
+mq; //media query must be initialized in build function whose parent class must be Material App
 
 void main() {
+  _initializeFirebase();
   runApp(const MyApp());
 }
 
@@ -25,7 +29,11 @@ class MyApp extends StatelessWidget {
           backgroundColor: Colors.white,
         ),
       ),
-      home: LoginScreen()
+      home: LoginScreen(),
     );
   }
+}
+
+_initializeFirebase() async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
