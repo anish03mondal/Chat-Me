@@ -1,6 +1,11 @@
 import 'package:chat_me/main.dart';
 import 'package:chat_me/screens/home_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
+
+//import 'firebase_options.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -57,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
               height: mq.height * .07,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  signInButton(context);
+                  _handleGoogleBtnClick();
                 },
                 icon: Image.asset('images/google.png', height: mq.height * .04),
                 label: const Text(
@@ -92,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 50,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        signInButton(context);
+                        _handleGoogleBtnClick();
                       },
                       icon: Image.asset('images/google.png', height: 24),
                       label: const Text(
@@ -118,10 +123,39 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void signInButton(BuildContext context) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => HomeScreen()),
-    );
+  _handleGoogleBtnClick() {
+    _signInWithGoogle().then((user) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => HomeScreen()),
+      );
+    });
   }
+
+  Future<UserCredential> _signInWithGoogle() async {
+  if (kIsWeb) {
+    // Web-specific sign-in
+    GoogleAuthProvider authProvider = GoogleAuthProvider();
+
+    return await FirebaseAuth.instance.signInWithPopup(authProvider);
+  } else {
+    // Mobile (Android/iOS) sign-in
+    final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+    if (googleUser == null) {
+      throw FirebaseAuthException(code: 'ERROR_ABORTED_BY_USER');
+    }
+
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    return await FirebaseAuth.instance.signInWithCredential(credential);
+  }
+}
 }

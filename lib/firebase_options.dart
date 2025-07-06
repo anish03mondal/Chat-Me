@@ -63,6 +63,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '634025178061',
     projectId: 'chat-me-2383b',
     storageBucket: 'chat-me-2383b.firebasestorage.app',
+    androidClientId: '634025178061-1qc34t5igt1nc7uaqgte1hp1dmu5k3cs.apps.googleusercontent.com',
+    iosClientId: '634025178061-63e7t7b1ltsovmevfs8pi1g2tee9o8kk.apps.googleusercontent.com',
     iosBundleId: 'com.example.chatMe',
   );
 
