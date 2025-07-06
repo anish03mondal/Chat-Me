@@ -1,15 +1,25 @@
 import 'package:chat_me/screens/auth/login_screen.dart';
 import 'package:chat_me/screens/home_screen.dart';
+import 'package:chat_me/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
 import 'firebase_options.dart';
 
 //global object for accessing device screen size
 late Size
 mq; //media query must be initialized in build function whose parent class must be Material App
 
-void main() {
-  _initializeFirebase();
+void main() async {
+
+  WidgetsFlutterBinding.ensureInitialized();  // It sets up Flutter's connection to the engine so you can safely use things like: firebase systemchrome
+  await SystemChrome.setPreferredOrientations([ // setting the orientation of the app
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  await _initializeFirebase();  // to initialize firebase
+
+  
   runApp(const MyApp());
 }
 
@@ -29,7 +39,7 @@ class MyApp extends StatelessWidget {
           backgroundColor: Colors.white,
         ),
       ),
-      home: LoginScreen(),
+      home: SplashScreen(),
     );
   }
 }
