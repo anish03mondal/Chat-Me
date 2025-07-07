@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:chat_me/api/apis.dart';
 import 'package:chat_me/helper/dialogs.dart';
 import 'package:chat_me/main.dart';
 import 'package:chat_me/screens/home_screen.dart';
@@ -151,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Web-specific sign-in
         GoogleAuthProvider authProvider = GoogleAuthProvider();
 
-        return await FirebaseAuth.instance.signInWithPopup(authProvider);
+        return await APIs.auth.signInWithPopup(authProvider);
       } else {
         await InternetAddress.lookup(
         'google.com',
@@ -172,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
           idToken: googleAuth.idToken,
         );
 
-        return await FirebaseAuth.instance.signInWithCredential(credential);
+        return await APIs.auth.signInWithCredential(credential);
       }
     } catch (e) {
       Dialogs.showSnackBar(
