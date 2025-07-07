@@ -1,5 +1,9 @@
+import 'dart:math';
+
 import 'package:chat_me/api/apis.dart';
+import 'package:chat_me/helper/dialogs.dart';
 import 'package:chat_me/main.dart';
+import 'package:chat_me/models/chat_user.dart';
 import 'package:chat_me/widgets/chat_user_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +18,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  List<ChatUser> list = [];
+
   @override
   Widget build(BuildContext context) {
     mq = MediaQuery.of(context).size;
@@ -43,26 +49,41 @@ class _HomeScreenState extends State<HomeScreen> {
             .collection('users')
             .snapshots(), //.snapshots(): Returns a stream of real-time updates for that collection
         builder: (context, snapshot) {
-          final list = [];
+          switch (snapshot.connectionState) {
+            //This switch block handles the various connection states of a StreamBuilder
+            // if data is loading
+            case ConnectionState
+                .waiting: //This means the Stream or Future has not received any data yet — it is still loading.
+            case ConnectionState
+                .done: // it means the Future has completed that may be data
+              return Center(child: CircularProgressIndicator());
 
-          if (snapshot.hasData) {
-            final data = snapshot.data?.docs;
-            for (var i in data!) {
-              log('Data: ${i.data()}');
-              list.add(i.data()['Name']);
-            }
+            // if some or all data loaded then show it
+            case ConnectionState
+                .active: //This is used in StreamBuilder and means the stream is actively providing data
+            case ConnectionState
+                .none: //Means no connection was made to the Stream or Future.
+
+              final data = snapshot
+                  .data
+                  ?.docs; //This gets the list of documents from Firestore if snapshot.data is not null.
+              list =
+                  data?.map((e) => ChatUser.fromJson(e.data())).toList() ?? [];
+
+              if (list.isNotEmpty) {
+                return ListView.builder(
+                  itemCount: list.length,
+                  padding: EdgeInsets.only(top: mq.height * .01),
+                  physics: BouncingScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    return ChatUserCard(user: list[index]);
+                    //return Text('Name: ${list[index]}');
+                  },
+                );
+              } else {
+                return Center(child: Text("No connection found", style: TextStyle(fontSize: 18),));
+              }
           }
-
-          return ListView.builder(
-            itemCount: list.length,
-            padding: EdgeInsets.only(top: mq.height * .01),
-            physics: BouncingScrollPhysics(),
-            itemBuilder: (context, index) {
-              //return ChatUserCard();
-              return Text('Name: ${list[index]}');
-
-            },
-          );
         },
       ),
     );
