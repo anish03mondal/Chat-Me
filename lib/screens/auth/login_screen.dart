@@ -131,14 +131,23 @@ class _LoginScreenState extends State<LoginScreen> {
   _handleGoogleBtnClick() {
     // to show progress bar until it is loging in
     Dialogs.showProgressBar(context);
-    _signInWithGoogle().then((user) {
+    _signInWithGoogle().then((user) async {
       // to hide the progress bar
-      Navigator.pop(context);   //Navigator.pop(context);
+      Navigator.pop(context); //Navigator.pop(context);
       if (user != null) {
-        Navigator.pushReplacement(
+        if ((await APIs.userExists())) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => HomeScreen()),
+          );
+        } else {
+          await APIs.createUser().then((value) {
+            Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => HomeScreen()),
         );
+          });
+        }
       }
     });
   }
@@ -146,7 +155,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<UserCredential?> _signInWithGoogle() async {
     //_signInWithGoogle() it does not throw any exception it handles internally
     try {
-      
       if (kIsWeb) {
         //kIsWeb is a constant that tells whether the app is running on the web.
         // Web-specific sign-in
@@ -155,8 +163,8 @@ class _LoginScreenState extends State<LoginScreen> {
         return await APIs.auth.signInWithPopup(authProvider);
       } else {
         await InternetAddress.lookup(
-        'google.com',
-      ); //for the above reason it is used, it thows error when device is not connected to internet
+          'google.com',
+        ); //for the above reason it is used, it thows error when device is not connected to internet
         // Mobile (Android/iOS) sign-in
         final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
         final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
