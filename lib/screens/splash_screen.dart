@@ -1,4 +1,7 @@
 import 'package:chat_me/screens/auth/login_screen.dart';
+import 'package:chat_me/screens/home_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
@@ -14,10 +17,23 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
 
     Future.delayed(Duration(seconds: 4), () {
-      Navigator.pushReplacement(
+
+      if(FirebaseAuth.instance.currentUser != null)
+      {
+        Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => HomeScreen()),
+      );
+      }
+      else
+      {
+        Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => LoginScreen()),
       );
+      }
+
+      
     });
   }
 

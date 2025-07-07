@@ -1,3 +1,7 @@
+import 'dart:developer';
+import 'dart:io';
+
+import 'package:chat_me/helper/dialogs.dart';
 import 'package:chat_me/main.dart';
 import 'package:chat_me/screens/home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -124,38 +128,59 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   _handleGoogleBtnClick() {
+    // to show progress bar until it is loging in
+    Dialogs.showProgressBar(context);
     _signInWithGoogle().then((user) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => HomeScreen()),
-      );
+      // to hide the progress bar
+      Navigator.pop(context);   //Navigator.pop(context);
+      if (user != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => HomeScreen()),
+        );
+      }
     });
   }
 
-  Future<UserCredential> _signInWithGoogle() async {
-  if (kIsWeb) {
-    // Web-specific sign-in
-    GoogleAuthProvider authProvider = GoogleAuthProvider();
+  Future<UserCredential?> _signInWithGoogle() async {
+    //_signInWithGoogle() it does not throw any exception it handles internally
+    try {
+      
+      if (kIsWeb) {
+        //kIsWeb is a constant that tells whether the app is running on the web.
+        // Web-specific sign-in
+        GoogleAuthProvider authProvider = GoogleAuthProvider();
 
-    return await FirebaseAuth.instance.signInWithPopup(authProvider);
-  } else {
-    // Mobile (Android/iOS) sign-in
-    final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
-    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+        return await FirebaseAuth.instance.signInWithPopup(authProvider);
+      } else {
+        await InternetAddress.lookup(
+        'google.com',
+      ); //for the above reason it is used, it thows error when device is not connected to internet
+        // Mobile (Android/iOS) sign-in
+        final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+        final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-    if (googleUser == null) {
-      throw FirebaseAuthException(code: 'ERROR_ABORTED_BY_USER');
+        if (googleUser == null) {
+          throw FirebaseAuthException(code: 'ERROR_ABORTED_BY_USER');
+        }
+
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        return await FirebaseAuth.instance.signInWithCredential(credential);
+      }
+    } catch (e) {
+      Dialogs.showSnackBar(
+        context,
+        'Something went wrong please check Internet Connection...',
+      );
+      log('\n _signInWithGoogle: $e');
     }
-
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
-
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    return await FirebaseAuth.instance.signInWithCredential(credential);
+    return null;
   }
-}
 }
