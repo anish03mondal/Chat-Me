@@ -1,14 +1,11 @@
-import 'dart:math';
-
 import 'package:chat_me/api/apis.dart';
-import 'package:chat_me/helper/dialogs.dart';
 import 'package:chat_me/main.dart';
 import 'package:chat_me/models/chat_user.dart';
+import 'package:chat_me/screens/profile_screen.dart';
 import 'package:chat_me/widgets/chat_user_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'dart:developer';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,7 +26,15 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text('Chat Me'),
         actions: [
           IconButton(onPressed: () {}, icon: Icon(Icons.search)),
-          IconButton(onPressed: () {}, icon: Icon(Icons.more_vert_sharp)),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ProfileScreen(user: list[0],)),
+              );
+            },
+            icon: Icon(Icons.more_vert_sharp),
+          ),
         ],
       ),
 
@@ -81,7 +86,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 );
               } else {
-                return Center(child: Text("No connection found", style: TextStyle(fontSize: 18),));
+                return Center(
+                  child: Text(
+                    "No connection found",
+                    style: TextStyle(fontSize: 18),
+                  ),
+                );
               }
           }
         },
