@@ -18,6 +18,17 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ChatUser> list = [];
 
   @override
+  void initState() {
+    super.initState();
+     _initUserInfo();
+  }
+
+   Future<void> _initUserInfo() async {
+    await APIs.getSelfInfo();
+    setState(() {}); // triggers rebuild after `me` is initialized
+  }
+
+  @override
   Widget build(BuildContext context) {
     mq = MediaQuery.of(context).size;
     return Scaffold(
@@ -30,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ProfileScreen(user: list[0],)),
+                MaterialPageRoute(builder: (_) => ProfileScreen(user: APIs.me!)),
               );
             },
             icon: Icon(Icons.more_vert_sharp),
@@ -50,9 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       body: StreamBuilder(
         //Used when you want to listen to real-time data (e.g., from Firebase, sockets, or any stream) and update the UI automatically when data changes.
-        stream: APIs.firestore
-            .collection('users')
-            .snapshots(), //.snapshots(): Returns a stream of real-time updates for that collection
+        stream: APIs.getAllUsers(),
         builder: (context, snapshot) {
           switch (snapshot.connectionState) {
             //This switch block handles the various connection states of a StreamBuilder

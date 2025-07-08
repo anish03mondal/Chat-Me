@@ -9,14 +9,30 @@ class APIs {
   static FirebaseFirestore firestore = FirebaseFirestore
       .instance; // creating instance of FirebaseFirestore in firestore variable
 
-  static User get user => auth.currentUser!;  //Gets the currently logged-in Firebase user.
-   static String? profilePhotoUrl;
+  static User get user =>
+      auth.currentUser!; //Gets the currently logged-in Firebase user.
+  static String? profilePhotoUrl;
+
+  //for storing self information
+  static ChatUser? me;
 
   //for checking if user exists or not
   static Future<bool> userExists() async {
     return (await firestore.collection('users').doc(user.uid).get())
         .exists; //will return true of false
   }
+
+  // for getting current user info
+  static Future<void> getSelfInfo() async {
+  final userSnapshot = await firestore.collection('users').doc(user.uid).get();
+  if (userSnapshot.exists) {
+    me = ChatUser.fromJson(userSnapshot.data()!);
+  } else {
+    await createUser();
+    await getSelfInfo();
+  }
+}
+
 
   //for crating a new user
   static Future<void> createUser() async {
@@ -34,6 +50,16 @@ class APIs {
       pushToken: '',
     );
 
-    return await firestore.collection('users').doc(user.uid).set(chatUser.toJson());
+    return await firestore
+        .collection('users')
+        .doc(user.uid)
+        .set(chatUser.toJson());
+  }
+
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllUsers() {
+    return firestore
+        .collection('users')
+        .where('id', isNotEqualTo: user.uid)
+        .snapshots();
   }
 }
