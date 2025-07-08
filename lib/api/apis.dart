@@ -24,15 +24,17 @@ class APIs {
 
   // for getting current user info
   static Future<void> getSelfInfo() async {
-  final userSnapshot = await firestore.collection('users').doc(user.uid).get();
-  if (userSnapshot.exists) {
-    me = ChatUser.fromJson(userSnapshot.data()!);
-  } else {
-    await createUser();
-    await getSelfInfo();
+    final userSnapshot = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    if (userSnapshot.exists) {
+      me = ChatUser.fromJson(userSnapshot.data()!);
+    } else {
+      await createUser();
+      await getSelfInfo();
+    }
   }
-}
-
 
   //for crating a new user
   static Future<void> createUser() async {
@@ -56,10 +58,20 @@ class APIs {
         .set(chatUser.toJson());
   }
 
+  //for getting all users
   static Stream<QuerySnapshot<Map<String, dynamic>>> getAllUsers() {
     return firestore
         .collection('users')
         .where('id', isNotEqualTo: user.uid)
         .snapshots();
+  }
+
+  // for updating user information
+  static Future<void> updateUserInfo() async {
+   await firestore.collection('users').doc(user.uid).update({
+  'name' : me?.name ?? '',
+  'about' : me?.about ?? '',
+});
+
   }
 }
