@@ -166,12 +166,14 @@ class _LoginScreenState extends State<LoginScreen> {
           'google.com',
         ); //for the above reason it is used, it thows error when device is not connected to internet
         // Mobile (Android/iOS) sign-in
-        final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+        final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
         final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
         if (googleUser == null) {
           throw FirebaseAuthException(code: 'ERROR_ABORTED_BY_USER');
         }
+
+        APIs.profilePhotoUrl = googleUser.photoUrl;
 
         final GoogleSignInAuthentication googleAuth =
             await googleUser.authentication;

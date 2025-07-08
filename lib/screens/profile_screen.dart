@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_me/api/apis.dart';
+import 'package:chat_me/helper/dialogs.dart';
 import 'package:chat_me/main.dart';
 import 'package:chat_me/models/chat_user.dart';
+import 'package:chat_me/screens/auth/login_screen.dart';
 import 'package:chat_me/widgets/chat_user_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -24,42 +26,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(title: Text('Profile Screen')),
 
       floatingActionButton: FloatingActionButton.extended(
-        //backgroundColor: Colors.redAccent,
-        onPressed: () async {
-          await APIs.auth
-              .signOut(); // FirebaseAuth.signOut(): Logs out the user from Firebase.
-          await GoogleSignIn()
-              .signOut(); //Logs out the user from their Google account (used in sign-in).
-        },
-        icon: Icon(Icons.logout),
-        label: Text('Logout'),
-      ),
+  onPressed: () async {
+    await APIs.auth.signOut(); // Firebase sign-out
+
+final googleSignIn = GoogleSignIn();
+if (await googleSignIn.isSignedIn()) {
+  await googleSignIn.disconnect(); // Important for web
+  await googleSignIn.signOut();
+}
+
+// Optional: small delay to allow cleanup
+await Future.delayed(const Duration(milliseconds: 300));
+
+// Navigate only if still in widget tree
+if (mounted) {
+  Navigator.of(context).pushAndRemoveUntil(
+    MaterialPageRoute(builder: (_) => const LoginScreen()),
+    (route) => false,
+  );
+}
+
+  },
+  icon: Icon(Icons.logout),
+  label: Text('Logout'),
+),
+
 
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: mq.width * .05),
         child: Column(
           children: [
             SizedBox(width: mq.width, height: mq.height * .03),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(mq.height * .1),
-              child: kIsWeb
-                  ? Image.network(
-                      widget.user.image,
-                      width: mq.height * .2,
-                      height: mq.height * .2,
-                      fit: BoxFit.fill,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Icon(Icons.error),
-                    )
-                  : CachedNetworkImage(
-                      width: mq.height * .2,
-                      height: mq.height * .2,
-                      fit: BoxFit.fill,
-                      imageUrl: widget.user.image,
-                      placeholder: (context, url) =>
-                          CircularProgressIndicator(),
-                      errorWidget: (context, url, error) => Icon(Icons.error),
-                    ),
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(mq.height * .1),
+                  child: kIsWeb
+                      ? Image.network(
+                          widget.user.image,
+                          width: mq.height * .2,
+                          height: mq.height * .2,
+                          fit: BoxFit.fill,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Icon(Icons.error),
+                        )
+                      : CachedNetworkImage(
+                          width: mq.height * .2,
+                          height: mq.height * .2,
+                          fit: BoxFit.fill,
+                          imageUrl: widget.user.image,
+                          placeholder: (context, url) =>
+                              CircularProgressIndicator(),
+                          errorWidget: (context, url, error) =>
+                              Icon(Icons.error),
+                        ),
+                ),
+
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: MaterialButton(
+                    onPressed: () {},
+                    shape: CircleBorder(),
+                    color: Colors.white,
+                    child: Icon(Icons.edit),
+                  ),
+                ),
+              ],
             ),
 
             SizedBox(height: mq.height * .03),

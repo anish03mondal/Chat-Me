@@ -10,6 +10,7 @@ class APIs {
       .instance; // creating instance of FirebaseFirestore in firestore variable
 
   static User get user => auth.currentUser!;  //Gets the currently logged-in Firebase user.
+   static String? profilePhotoUrl;
 
   //for checking if user exists or not
   static Future<bool> userExists() async {
@@ -26,7 +27,7 @@ class APIs {
       createdAt: time,
       email: user.email.toString(),
       id: user.uid,
-      image: user.photoURL.toString(),
+      image: profilePhotoUrl ?? user.photoURL.toString(),
       isOnline: false,
       lastActive: time,
       name: user.displayName.toString(),
