@@ -1,6 +1,5 @@
 import 'package:chat_me/main.dart';
 import 'package:chat_me/models/chat_user.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
