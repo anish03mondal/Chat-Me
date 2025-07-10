@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_me/api/apis.dart';
 import 'package:chat_me/main.dart';
 import 'package:chat_me/models/chat_user.dart';
+import 'package:chat_me/models/message.dart';
+import 'package:chat_me/widgets/message_card.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -14,6 +16,8 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  //for storing all meesages
+  List<Message> _list = [];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,6 +27,8 @@ class _ChatScreenState extends State<ChatScreen> {
         elevation: 1,
         flexibleSpace: SafeArea(child: _appBar()),
       ),
+
+      backgroundColor: Color.fromARGB(255, 234, 248, 255),
 
       body: Column(
         children: [
@@ -39,29 +45,50 @@ class _ChatScreenState extends State<ChatScreen> {
                   case ConnectionState
                       .done: // it means the Future has completed that may be data
                     return Center(child: CircularProgressIndicator());
-            
+
                   // if some or all data loaded then show it
                   case ConnectionState
                       .active: //This is used in StreamBuilder and means the stream is actively providing data
                   case ConnectionState
                       .none: //Means no connection was made to the Stream or Future.
-            
+
                     final data = snapshot
                         .data
                         ?.docs; //This gets the list of documents from Firestore if snapshot.data is not null.
                     // _list =
                     //     data?.map((e) => ChatUser.fromJson(e.data())).toList() ??
                     //     [];
-            
-                    final _list = [];
-            
+
+                    _list.clear();
+                    _list.add(
+                      Message(
+                        toId: 'xyz',
+                        msg: 'Hi1',
+                        read: '',
+                        type: Type.text,
+                        fromId: APIs.user.uid,
+                        sent: '12:00 AM',
+                      ),
+                    ); // Message
+
+                    _list.add(
+                      Message(
+                        toId: APIs.user.uid,
+                        msg: 'Hello',
+                        read: '',
+                        type: Type.text,
+                        fromId: 'xyz',
+                        sent: '12:05 AM',
+                      ),
+                    );
+
                     if (_list.isNotEmpty) {
                       return ListView.builder(
                         itemCount: _list.length,
                         padding: EdgeInsets.only(top: mq.height * .01),
                         physics: BouncingScrollPhysics(),
                         itemBuilder: (context, index) {
-                          return Text('Message');
+                          return MessageCard(message: _list[index]);
                           //return Text('Name: ${list[index]}');
                         },
                       );

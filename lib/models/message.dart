@@ -1,5 +1,5 @@
-class AutoGenerate {
-  AutoGenerate({
+class Message {
+  Message({
     required this.fromId,
     required this.msg,
     required this.read,
@@ -14,7 +14,7 @@ class AutoGenerate {
   late final String toId;
   late final Type type;
   
-  AutoGenerate.fromJson(Map<String, dynamic> json){
+  Message.fromJson(Map<String, dynamic> json){
     fromId = json['fromId'].toString();
     msg = json['msg'].toString();
     read = json['read'].toString();
