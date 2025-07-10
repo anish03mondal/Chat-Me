@@ -190,4 +190,15 @@ class APIs {
         .doc(message.sent) // Assuming 'sent' contains the message ID
         .update({'read': DateTime.now().millisecondsSinceEpoch.toString()});
   }
+
+  //get only last message of a specific chat
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getLastMessage(
+    ChatUser user,
+  ) {
+    return firestore
+        .collection('chats/${getConversationID(user.id)}/messages/')
+        .orderBy('sent', descending: true)
+        .limit(1)
+        .snapshots();
+  }
 }
