@@ -27,7 +27,10 @@ class APIs {
 
   // 📥 Get self info
   static Future<void> getSelfInfo() async {
-    final userSnapshot = await firestore.collection('users').doc(user.uid).get();
+    final userSnapshot = await firestore
+        .collection('users')
+        .doc(user.uid)
+        .get();
     if (userSnapshot.exists) {
       me = ChatUser.fromJson(userSnapshot.data()!);
     } else {
@@ -51,7 +54,10 @@ class APIs {
       pushToken: '',
     );
 
-    return await firestore.collection('users').doc(user.uid).set(chatUser.toJson());
+    return await firestore
+        .collection('users')
+        .doc(user.uid)
+        .set(chatUser.toJson());
   }
 
   // 📡 Stream of all users except self
@@ -73,7 +79,9 @@ class APIs {
   // 🖼️ Upload image (Mobile) to Cloudinary
   static Future<String?> uploadImageToCloudinary(File file) async {
     try {
-      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      final uri = Uri.parse(
+        'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+      );
       final request = http.MultipartRequest('POST', uri)
         ..fields['upload_preset'] = uploadPreset
         ..files.add(await http.MultipartFile.fromPath('file', file.path));
@@ -95,12 +103,19 @@ class APIs {
   }
 
   // 🌐 Upload image (Web) to Cloudinary
-  static Future<String?> uploadWebImageToCloudinary(Uint8List bytes, String fileName) async {
+  static Future<String?> uploadWebImageToCloudinary(
+    Uint8List bytes,
+    String fileName,
+  ) async {
     try {
-      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      final uri = Uri.parse(
+        'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+      );
       final request = http.MultipartRequest('POST', uri)
         ..fields['upload_preset'] = uploadPreset
-        ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
+        ..files.add(
+          http.MultipartFile.fromBytes('file', bytes, filename: fileName),
+        );
 
       final response = await request.send();
       final responseData = await response.stream.bytesToString();
@@ -126,5 +141,12 @@ class APIs {
 
     // Also update local cache
     if (me != null) me!.image = imageUrl;
+  }
+
+  // Chat screen Relaed API **********************
+
+  //for getting all messages of a specific conversation from firestore database
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages() {
+    return firestore.collection('messages').snapshots();
   }
 }
