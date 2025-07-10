@@ -1,10 +1,7 @@
-import 'dart:developer';
 import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_me/api/apis.dart';
 import 'package:chat_me/helper/dialogs.dart';
-import 'package:chat_me/main.dart';
 import 'package:chat_me/models/chat_user.dart';
 import 'package:chat_me/screens/auth/login_screen.dart';
 import 'package:file_picker/file_picker.dart';
@@ -12,7 +9,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:convert';
 
 class ProfileScreen extends StatefulWidget {
   final ChatUser user;
@@ -72,19 +68,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(mq.height * .1),
                         child: _image != null
-                            ? (kIsWeb
-                                  ? Image.network(
-                                      _image!,
-                                      width: mq.height * .2,
-                                      height: mq.height * .2,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Image.file(
-                                      File(_image!),
-                                      width: mq.height * .2,
-                                      height: mq.height * .2,
-                                      fit: BoxFit.cover,
-                                    ))
+                            ? Image.network(
+                                _image!,
+                                width: mq.height * .2,
+                                height: mq.height * .2,
+                                fit: BoxFit.cover,
+                              )
                             : CachedNetworkImage(
                                 imageUrl: widget.user.image,
                                 width: mq.height * .2,
@@ -204,6 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
+                // Gallery Picker
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -217,9 +207,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                       if (result != null && result.files.single.bytes != null) {
                         final bytes = result.files.single.bytes!;
-                        final imageUrl =
-                            'data:image/png;base64,${base64Encode(bytes)}';
-                        setState(() => _image = imageUrl);
+                        final fileName = result.files.single.name;
+                        final imageUrl = await APIs.uploadWebImageToCloudinary(bytes, fileName);
+                        if (imageUrl != null) {
+                          await APIs.updateProfileImage(imageUrl);
+                          setState(() => _image = imageUrl);
+                        }
                       }
                     } else {
                       final ImagePicker picker = ImagePicker();
@@ -227,13 +220,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         source: ImageSource.gallery,
                       );
                       if (image != null) {
-                        setState(() => _image = image.path);
+                        final file = File(image.path);
+                        final imageUrl = await APIs.uploadImageToCloudinary(file);
+                        if (imageUrl != null) {
+                          await APIs.updateProfileImage(imageUrl);
+                          setState(() => _image = imageUrl);
+                        }
                       }
                     }
                     if (mounted) Navigator.pop(context);
                   },
                   child: Image.asset('images/add.png'),
                 ),
+
+                // Camera Picker
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -242,11 +242,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   onPressed: () async {
                     if (kIsWeb) {
-                      // Show snackbar on web
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('This option is only for app users.'),
+                            content: Text('Camera not supported on web.'),
                           ),
                         );
                       }
@@ -256,12 +255,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         source: ImageSource.camera,
                       );
                       if (image != null) {
-                        setState(() => _image = image.path);
+                        final file = File(image.path);
+                        final imageUrl = await APIs.uploadImageToCloudinary(file);
+                        if (imageUrl != null) {
+                          await APIs.updateProfileImage(imageUrl);
+                          setState(() => _image = imageUrl);
+                        }
                       }
                       if (mounted) Navigator.pop(context);
                     }
                   },
-
                   child: Image.asset('images/camera1.png'),
                 ),
               ],
