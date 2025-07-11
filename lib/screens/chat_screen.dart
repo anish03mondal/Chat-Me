@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_me/api/apis.dart';
+import 'package:chat_me/helper/my_date_util.dart';
 import 'package:chat_me/main.dart';
 import 'package:chat_me/models/chat_user.dart';
 import 'package:chat_me/models/message.dart';
@@ -9,7 +10,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-
 
 import 'package:image_picker/image_picker.dart';
 
@@ -145,67 +145,89 @@ class _ChatScreenState extends State<ChatScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: InkWell(
         onTap: () {},
-        child: Row(
-          children: [
-            // Back Button
-            IconButton(
-              onPressed: () {
-                Navigator.pop(context); // Go back to previous screen
-              },
-              icon: const Icon(Icons.arrow_back, color: Colors.black),
-            ),
+        child: StreamBuilder(
+          stream: APIs.getUserInfo(widget.user),
+          builder: (context, snapshot) {
+            final data = snapshot.data?.docs;
+            final list =
+                data?.map((e) => ChatUser.fromJson(e.data())).toList() ?? [];
 
-            ClipRRect(
-              borderRadius: BorderRadius.circular(mq.height * .3),
-              child: kIsWeb
-                  ? Image.network(
-                      widget.user.image,
-                      width: mq.height * .055,
-                      height: mq.height * .055,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Icon(Icons.error),
-                    )
-                  : CachedNetworkImage(
-                      width: mq.height * .05,
-                      height: mq.height * .05,
-                      imageUrl: widget.user.image,
-                      placeholder: (context, url) =>
-                          CircularProgressIndicator(),
-                      errorWidget: (context, url, error) => Icon(Icons.error),
-                    ),
-            ),
-
-            // for adding some space
-            SizedBox(width: 10),
-
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            return Row(
               children: [
-                Text(
-                  widget.user.name,
-                  style: TextStyle(
-                    fontSize: 17,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w500,
-                  ),
+                // Back Button
+                IconButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Go back to previous screen
+                  },
+                  icon: const Icon(Icons.arrow_back, color: Colors.black),
                 ),
 
-                SizedBox(height: 2),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(mq.height * .3),
+                  child: kIsWeb
+                      ? Image.network(
+                          widget.user.image,
+                          width: mq.height * .055,
+                          height: mq.height * .055,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Icon(Icons.error),
+                        )
+                      : CachedNetworkImage(
+                          width: mq.height * .05,
+                          height: mq.height * .05,
+                          imageUrl: list.isNotEmpty
+                              ? list[0].image
+                              : widget.user.image,
+                          placeholder: (context, url) =>
+                              CircularProgressIndicator(),
+                          errorWidget: (context, url, error) =>
+                              Icon(Icons.error),
+                        ),
+                ),
 
-                //last seen time of user
-                Text(
-                  "Last seen not available",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                    //fontWeight: FontWeight.w500,
-                  ),
+                // for adding some space
+                SizedBox(width: 10),
+
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      list.isNotEmpty ? list[0].name : widget.user.name,
+                      style: TextStyle(
+                        fontSize: 17,
+                        color: Colors.black,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+
+                    SizedBox(height: 2),
+
+                    //last seen time of user
+                    Text(
+                      list.isNotEmpty
+                          ? list[0].isOnline
+                                ? 'Online'
+                                : MyDateUtil.getLastActiveTime(
+                                    context: context,
+                                    lastActive: list[0].lastActive,
+                                  )
+                          : MyDateUtil.getLastActiveTime(
+                                    context: context,
+                                    lastActive: widget.user.lastActive,
+                                  ),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black,
+                        //fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -213,125 +235,155 @@ class _ChatScreenState extends State<ChatScreen> {
 
   //bottom chat input field
   Widget _chatInput() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-    child: Row(
-      children: [
-        // Chat input box with buttons
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // Emoji button
-                IconButton(
-                  onPressed: () {
-                    FocusScope.of(context).unfocus();
-                    setState(() {
-                      _showEmoji = !_showEmoji;
-                    });
-                  },
-                  icon: const Icon(
-                    Icons.emoji_emotions,
-                    color: Colors.blueAccent,
-                    size: 24,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      child: Row(
+        children: [
+          // Chat input box with buttons
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
                   ),
-                ),
-
-                // Text input
-                Expanded(
-                  child: TextField(
-                    controller: _textController,
-                    keyboardType: TextInputType.multiline,
-                    maxLines: null,
-                    onTap: () {
-                      if (_showEmoji)
-                        setState(() {
-                          _showEmoji = false;
-                        });
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Emoji button
+                  IconButton(
+                    onPressed: () {
+                      FocusScope.of(context).unfocus();
+                      setState(() {
+                        _showEmoji = !_showEmoji;
+                      });
                     },
-                    decoration: const InputDecoration(
-                      hintText: "Type something...",
-                      hintStyle: TextStyle(color: Colors.blueAccent),
-                      border: InputBorder.none,
+                    icon: const Icon(
+                      Icons.emoji_emotions,
+                      color: Colors.blueAccent,
+                      size: 24,
                     ),
                   ),
-                ),
 
-                // Gallery (file picker for mobile/web)
-                IconButton(
-                  onPressed: () async {
-                    if (kIsWeb) {
-                      // Web: Use FilePicker
-                      final result = await FilePicker.platform.pickFiles(type: FileType.image);
-                      if (result != null && result.files.single.bytes != null) {
-                        final bytes = result.files.single.bytes!;
-                        final name = result.files.single.name;
-                        await APIs.sendChatImage(widget.user, bytes, fileName: name);
-                      }
-                    } else {
-                      // Mobile: Use ImagePicker
-                      final ImagePicker picker = ImagePicker();
-                      final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-                      if (image != null) {
-                        await APIs.sendChatImage(widget.user, File(image.path));
-                      }
-                    }
-                  },
-                  icon: const Icon(Icons.image, color: Colors.blueAccent, size: 24),
-                ),
+                  // Text input
+                  Expanded(
+                    child: TextField(
+                      controller: _textController,
+                      keyboardType: TextInputType.multiline,
+                      maxLines: null,
+                      onTap: () {
+                        if (_showEmoji)
+                          setState(() {
+                            _showEmoji = false;
+                          });
+                      },
+                      decoration: const InputDecoration(
+                        hintText: "Type something...",
+                        hintStyle: TextStyle(color: Colors.blueAccent),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
 
-                // Camera button (mobile only)
-                if (!kIsWeb)
+                  // Gallery (file picker for mobile/web)
                   IconButton(
                     onPressed: () async {
-                      final ImagePicker picker = ImagePicker();
-                      final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
-                      if (image != null) {
-                        await APIs.sendChatImage(widget.user, File(image.path));
+                      if (kIsWeb) {
+                        // Web: Use FilePicker
+                        final result = await FilePicker.platform.pickFiles(
+                          type: FileType.image,
+                        );
+                        if (result != null &&
+                            result.files.single.bytes != null) {
+                          final bytes = result.files.single.bytes!;
+                          final name = result.files.single.name;
+                          await APIs.sendChatImage(
+                            widget.user,
+                            bytes,
+                            fileName: name,
+                          );
+                        }
+                      } else {
+                        // Mobile: Use ImagePicker
+                        final ImagePicker picker = ImagePicker();
+                        final XFile? image = await picker.pickImage(
+                          source: ImageSource.gallery,
+                          imageQuality: 70,
+                        );
+                        if (image != null) {
+                          await APIs.sendChatImage(
+                            widget.user,
+                            File(image.path),
+                          );
+                        }
                       }
                     },
-                    icon: const Icon(Icons.camera_alt_rounded, color: Colors.blueAccent, size: 24),
+                    icon: const Icon(
+                      Icons.image,
+                      color: Colors.blueAccent,
+                      size: 24,
+                    ),
                   ),
-              ],
+
+                  // Camera button (mobile only)
+                  if (!kIsWeb)
+                    IconButton(
+                      onPressed: () async {
+                        final ImagePicker picker = ImagePicker();
+                        final XFile? image = await picker.pickImage(
+                          source: ImageSource.camera,
+                          imageQuality: 70,
+                        );
+                        if (image != null) {
+                          await APIs.sendChatImage(
+                            widget.user,
+                            File(image.path),
+                          );
+                        }
+                      },
+                      icon: const Icon(
+                        Icons.camera_alt_rounded,
+                        color: Colors.blueAccent,
+                        size: 24,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
 
-        const SizedBox(width: 8),
+          const SizedBox(width: 8),
 
-        // Send button
-        Material(
-          color: Colors.green,
-          shape: const CircleBorder(),
-          child: InkWell(
-            onTap: () {
-              if (_textController.text.isNotEmpty) {
-                APIs.sendMessage(widget.user, _textController.text, Type.text);
-                _textController.clear();
-              }
-            },
-            borderRadius: BorderRadius.circular(100),
-            child: const Padding(
-              padding: EdgeInsets.all(12),
-              child: Icon(Icons.send, color: Colors.white, size: 26),
+          // Send button
+          Material(
+            color: Colors.green,
+            shape: const CircleBorder(),
+            child: InkWell(
+              onTap: () {
+                if (_textController.text.isNotEmpty) {
+                  APIs.sendMessage(
+                    widget.user,
+                    _textController.text,
+                    Type.text,
+                  );
+                  _textController.clear();
+                }
+              },
+              borderRadius: BorderRadius.circular(100),
+              child: const Padding(
+                padding: EdgeInsets.all(12),
+                child: Icon(Icons.send, color: Colors.white, size: 26),
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
+        ],
+      ),
+    );
+  }
 }

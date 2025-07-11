@@ -6,6 +6,7 @@ import 'package:chat_me/widgets/chat_user_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/services.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +29,21 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initUserInfo();
+
+    // for setting user status to active
+    APIs.updateActiveStatus(true);
+
+    // for updating user active status according to lifecycle events
+    // resume -- active or online
+    // pause -- inactive or offline
+    SystemChannels.lifecycle.setMessageHandler((message) async {
+      if (message.toString().contains('resume'))
+        await APIs.updateActiveStatus(true);
+      if (message.toString().contains('pause'))
+        await APIs.updateActiveStatus(false);
+
+      return Future.value(message);
+    });
   }
 
   Future<void> _initUserInfo() async {
@@ -48,9 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _isSearching = !_isSearching;
             });
             return Future.value(false);
-          }
-          else
-          {
+          } else {
             return Future.value(true);
           }
         },
@@ -175,6 +189,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  
 }

@@ -144,6 +144,26 @@ class APIs {
     if (me != null) me!.image = imageUrl;
   }
 
+  // for getting specific user info
+static Stream<QuerySnapshot<Map<String, dynamic>>> getUserInfo(
+    ChatUser chatUser) {
+    return firestore
+        .collection('users')
+        .where('id', isEqualTo: chatUser.id)
+        .snapshots();  // Fixed case: snapShots → snapshots
+}
+
+// update online or last active status of user
+static Future<void> updateActiveStatus(bool isOnline) async {
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .update({  // Fixed square brackets to curly braces
+            'is_online': isOnline,
+            'last_active': DateTime.now().millisecondsSinceEpoch.toString(),
+        });  // Fixed extra parenthesis
+}
+
   // Chat screen Relaed API **********************
 
   //useful for getting conversation id
