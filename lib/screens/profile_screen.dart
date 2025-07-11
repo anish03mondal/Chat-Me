@@ -5,6 +5,7 @@ import 'package:chat_me/helper/dialogs.dart';
 import 'package:chat_me/models/chat_user.dart';
 import 'package:chat_me/screens/auth/login_screen.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -34,6 +35,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
+            await APIs.updateActiveStatus(false);
+
             await APIs.auth.signOut();
 
             final googleSignIn = GoogleSignIn();
@@ -41,7 +44,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               await googleSignIn.disconnect();
               await googleSignIn.signOut();
             }
-
+            APIs.auth = FirebaseAuth.instance;
             if (mounted) {
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -208,7 +211,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (result != null && result.files.single.bytes != null) {
                         final bytes = result.files.single.bytes!;
                         final fileName = result.files.single.name;
-                        final imageUrl = await APIs.uploadWebImageToCloudinary(bytes, fileName);
+                        final imageUrl = await APIs.uploadWebImageToCloudinary(
+                          bytes,
+                          fileName,
+                        );
                         if (imageUrl != null) {
                           await APIs.updateProfileImage(imageUrl);
                           setState(() => _image = imageUrl);
@@ -221,7 +227,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                       if (image != null) {
                         final file = File(image.path);
-                        final imageUrl = await APIs.uploadImageToCloudinary(file);
+                        final imageUrl = await APIs.uploadImageToCloudinary(
+                          file,
+                        );
                         if (imageUrl != null) {
                           await APIs.updateProfileImage(imageUrl);
                           setState(() => _image = imageUrl);
@@ -256,7 +264,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                       if (image != null) {
                         final file = File(image.path);
-                        final imageUrl = await APIs.uploadImageToCloudinary(file);
+                        final imageUrl = await APIs.uploadImageToCloudinary(
+                          file,
+                        );
                         if (imageUrl != null) {
                           await APIs.updateProfileImage(imageUrl);
                           setState(() => _image = imageUrl);

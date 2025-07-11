@@ -37,10 +37,12 @@ class _HomeScreenState extends State<HomeScreen> {
     // resume -- active or online
     // pause -- inactive or offline
     SystemChannels.lifecycle.setMessageHandler((message) async {
-      if (message.toString().contains('resume'))
-        await APIs.updateActiveStatus(true);
-      if (message.toString().contains('pause'))
-        await APIs.updateActiveStatus(false);
+      if (APIs.auth.currentUser != null) {
+        if (message.toString().contains('resume'))
+          await APIs.updateActiveStatus(true);
+        if (message.toString().contains('pause'))
+          await APIs.updateActiveStatus(false);
+      }
 
       return Future.value(message);
     });

@@ -4,6 +4,7 @@ import 'package:chat_me/helper/my_date_util.dart';
 import 'package:chat_me/main.dart';
 import 'package:chat_me/models/chat_user.dart';
 import 'package:chat_me/models/message.dart';
+import 'package:chat_me/screens/view_profile_screen.dart';
 import 'package:chat_me/widgets/message_card.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/foundation.dart';
@@ -144,7 +145,12 @@ class _ChatScreenState extends State<ChatScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => ViewProfileScreen(user: widget.user)),
+          );
+        },
         child: StreamBuilder(
           stream: APIs.getUserInfo(widget.user),
           builder: (context, snapshot) {
@@ -214,9 +220,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                     lastActive: list[0].lastActive,
                                   )
                           : MyDateUtil.getLastActiveTime(
-                                    context: context,
-                                    lastActive: widget.user.lastActive,
-                                  ),
+                              context: context,
+                              lastActive: widget.user.lastActive,
+                            ),
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.black,
