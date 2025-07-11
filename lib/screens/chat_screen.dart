@@ -4,8 +4,10 @@ import 'package:chat_me/main.dart';
 import 'package:chat_me/models/chat_user.dart';
 import 'package:chat_me/models/message.dart';
 import 'package:chat_me/widgets/message_card.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 class ChatScreen extends StatefulWidget {
   final ChatUser user;
@@ -22,71 +24,113 @@ class _ChatScreenState extends State<ChatScreen> {
   //for handling message text changes
   final _textController = TextEditingController();
 
+  //for storing value of emoji or hiding emoji
+  bool _showEmoji = false;
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        elevation: 1,
-        flexibleSpace: SafeArea(child: _appBar()),
-      ),
-
-      backgroundColor: Color.fromARGB(255, 234, 248, 255),
-
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder(
-              //Used when you want to listen to real-time data (e.g., from Firebase, sockets, or any stream) and update the UI automatically when data changes.
-              stream: APIs.getAllMessages(widget.user),
-              builder: (context, snapshot) {
-                switch (snapshot.connectionState) {
-                  //This switch block handles the various connection states of a StreamBuilder
-                  // if data is loading
-                  case ConnectionState
-                      .waiting: //This means the Stream or Future has not received any data yet — it is still loading.
-                  case ConnectionState
-                      .done: // it means the Future has completed that may be data
-                    return SizedBox();
-
-                  // if some or all data loaded then show it
-                  case ConnectionState
-                      .active: //This is used in StreamBuilder and means the stream is actively providing data
-                  case ConnectionState
-                      .none: //Means no connection was made to the Stream or Future.
-
-                    final data = snapshot
-                        .data
-                        ?.docs; //This gets the list of documents from Firestore if snapshot.data is not null.
-                    _list =
-                        data?.map((e) => Message.fromJson(e.data())).toList() ??
-                        [];
-
-                    if (_list.isNotEmpty) {
-                      return ListView.builder(
-                        itemCount: _list.length,
-                        padding: EdgeInsets.only(top: mq.height * .01),
-                        physics: BouncingScrollPhysics(),
-                        itemBuilder: (context, index) {
-                          return MessageCard(message: _list[index]);
-                          //return Text('Name: ${list[index]}');
-                        },
-                      );
-                    } else {
-                      return Center(
-                        child: Text(
-                          "Say Hiiii 👋",
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      );
-                    }
-                }
-              },
-            ),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: WillPopScope(
+        onWillPop: () {
+          if (_showEmoji) {
+            setState(() {
+              _showEmoji = !_showEmoji;
+            });
+            return Future.value(false);
+          } else {
+            return Future.value(true);
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            backgroundColor: Colors.white,
+            elevation: 1,
+            flexibleSpace: SafeArea(child: _appBar()),
           ),
-          _chatInput(),
-        ],
+
+          backgroundColor: Color.fromARGB(255, 234, 248, 255),
+
+          body: Column(
+            children: [
+              Expanded(
+                child: StreamBuilder(
+                  //Used when you want to listen to real-time data (e.g., from Firebase, sockets, or any stream) and update the UI automatically when data changes.
+                  stream: APIs.getAllMessages(widget.user),
+                  builder: (context, snapshot) {
+                    switch (snapshot.connectionState) {
+                      //This switch block handles the various connection states of a StreamBuilder
+                      // if data is loading
+                      case ConnectionState
+                          .waiting: //This means the Stream or Future has not received any data yet — it is still loading.
+                      case ConnectionState
+                          .done: // it means the Future has completed that may be data
+                        return SizedBox();
+
+                      // if some or all data loaded then show it
+                      case ConnectionState
+                          .active: //This is used in StreamBuilder and means the stream is actively providing data
+                      case ConnectionState
+                          .none: //Means no connection was made to the Stream or Future.
+
+                        final data = snapshot
+                            .data
+                            ?.docs; //This gets the list of documents from Firestore if snapshot.data is not null.
+                        _list =
+                            data
+                                ?.map((e) => Message.fromJson(e.data()))
+                                .toList() ??
+                            [];
+
+                        if (_list.isNotEmpty) {
+                          return ListView.builder(
+                            itemCount: _list.length,
+                            padding: EdgeInsets.only(top: mq.height * .01),
+                            physics: BouncingScrollPhysics(),
+                            itemBuilder: (context, index) {
+                              return MessageCard(message: _list[index]);
+                              //return Text('Name: ${list[index]}');
+                            },
+                          );
+                        } else {
+                          return Center(
+                            child: Text(
+                              "Say Hiiii 👋",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          );
+                        }
+                    }
+                  },
+                ),
+              ),
+              _chatInput(),
+
+              // show emojis on keyboard emoji button click & vice versa
+              if (_showEmoji)
+                SizedBox(
+                  height: mq.height * .35,
+                  child: EmojiPicker(
+                    textEditingController: _textController,
+                    config: Config(
+                      emojiViewConfig: EmojiViewConfig(
+                        emojiSizeMax: 32 * (kIsWeb ? 1.0 : 1.3),
+                        columns: 8,
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          234,
+                          248,
+                          255,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              // SizedBox
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -187,7 +231,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   // Emoji button
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      FocusScope.of(context).unfocus();
+                      setState(() {
+                        _showEmoji = !_showEmoji;
+                      });
+                    },
+
                     icon: const Icon(
                       Icons.emoji_emotions,
                       color: Colors.blueAccent,
@@ -201,6 +251,12 @@ class _ChatScreenState extends State<ChatScreen> {
                       controller: _textController,
                       keyboardType: TextInputType.multiline,
                       maxLines: null,
+                      onTap: () {
+                        if (_showEmoji)
+                          setState(() {
+                            _showEmoji = !_showEmoji;
+                          });
+                      },
                       decoration: const InputDecoration(
                         hintText: "Type something...",
                         hintStyle: TextStyle(color: Colors.blueAccent),
