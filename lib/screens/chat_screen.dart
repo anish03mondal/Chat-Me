@@ -8,6 +8,10 @@ import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+
+
+import 'package:image_picker/image_picker.dart';
 
 class ChatScreen extends StatefulWidget {
   final ChatUser user;
@@ -208,111 +212,125 @@ class _ChatScreenState extends State<ChatScreen> {
 
   //bottom chat input field
   Widget _chatInput() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      child: Row(
-        children: [
-          // Chat input box with buttons
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+    child: Row(
+      children: [
+        // Chat input box with buttons
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // Emoji button
+                IconButton(
+                  onPressed: () {
+                    FocusScope.of(context).unfocus();
+                    setState(() {
+                      _showEmoji = !_showEmoji;
+                    });
+                  },
+                  icon: const Icon(
+                    Icons.emoji_emotions,
+                    color: Colors.blueAccent,
+                    size: 24,
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Emoji button
-                  IconButton(
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      setState(() {
-                        _showEmoji = !_showEmoji;
-                      });
+                ),
+
+                // Text input
+                Expanded(
+                  child: TextField(
+                    controller: _textController,
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
+                    onTap: () {
+                      if (_showEmoji)
+                        setState(() {
+                          _showEmoji = false;
+                        });
                     },
-
-                    icon: const Icon(
-                      Icons.emoji_emotions,
-                      color: Colors.blueAccent,
-                      size: 24,
+                    decoration: const InputDecoration(
+                      hintText: "Type something...",
+                      hintStyle: TextStyle(color: Colors.blueAccent),
+                      border: InputBorder.none,
                     ),
                   ),
+                ),
 
-                  // Text input
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      keyboardType: TextInputType.multiline,
-                      maxLines: null,
-                      onTap: () {
-                        if (_showEmoji)
-                          setState(() {
-                            _showEmoji = !_showEmoji;
-                          });
-                      },
-                      decoration: const InputDecoration(
-                        hintText: "Type something...",
-                        hintStyle: TextStyle(color: Colors.blueAccent),
-                        border: InputBorder.none,
-                      ),
-                      //minLines: 1,
-                      //maxLines: 4,
-                    ),
-                  ),
+                // Gallery (file picker for mobile/web)
+                IconButton(
+                  onPressed: () async {
+                    if (kIsWeb) {
+                      // Web: Use FilePicker
+                      final result = await FilePicker.platform.pickFiles(type: FileType.image);
+                      if (result != null && result.files.single.bytes != null) {
+                        final bytes = result.files.single.bytes!;
+                        final name = result.files.single.name;
+                        await APIs.sendChatImage(widget.user, bytes, fileName: name);
+                      }
+                    } else {
+                      // Mobile: Use ImagePicker
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+                      if (image != null) {
+                        await APIs.sendChatImage(widget.user, File(image.path));
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.image, color: Colors.blueAccent, size: 24),
+                ),
 
-                  // Gallery image button
+                // Camera button (mobile only)
+                if (!kIsWeb)
                   IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.image,
-                      color: Colors.blueAccent,
-                      size: 24,
-                    ),
+                    onPressed: () async {
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+                      if (image != null) {
+                        await APIs.sendChatImage(widget.user, File(image.path));
+                      }
+                    },
+                    icon: const Icon(Icons.camera_alt_rounded, color: Colors.blueAccent, size: 24),
                   ),
-
-                  // Camera button
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.camera_alt_rounded,
-                      color: Colors.blueAccent,
-                      size: 24,
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
+        ),
 
-          const SizedBox(width: 8),
+        const SizedBox(width: 8),
 
-          // Send message button
-          Material(
-            color: Colors.green,
-            shape: const CircleBorder(),
-            child: InkWell(
-              onTap: () {
-                if (_textController.text.isNotEmpty) {
-                  APIs.sendMessage(widget.user, _textController.text);
-                  _textController.text = '';
-                }
-              },
-              borderRadius: BorderRadius.circular(100),
-              child: const Padding(
-                padding: EdgeInsets.all(12),
-                child: Icon(Icons.send, color: Colors.white, size: 26),
-              ),
+        // Send button
+        Material(
+          color: Colors.green,
+          shape: const CircleBorder(),
+          child: InkWell(
+            onTap: () {
+              if (_textController.text.isNotEmpty) {
+                APIs.sendMessage(widget.user, _textController.text, Type.text);
+                _textController.clear();
+              }
+            },
+            borderRadius: BorderRadius.circular(100),
+            child: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Icon(Icons.send, color: Colors.white, size: 26),
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
 }

@@ -1,7 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_me/api/apis.dart';
 import 'package:chat_me/helper/my_date_util.dart';
 import 'package:chat_me/main.dart';
 import 'package:chat_me/models/message.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class MessageCard extends StatefulWidget {
@@ -23,39 +25,61 @@ class _MessageCardState extends State<MessageCard> {
 
   // sender or another user message
   Widget _blueMessage() {
-    //update last read message if sender and receiver are different
     if (widget.message.read.isEmpty) {
       APIs.updateMessageReadStatus(widget.message);
     }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      //message content
       children: [
         Flexible(
           child: Container(
-            padding: EdgeInsets.all(mq.width * .04),
+            padding: EdgeInsets.all(mq.width * .03),
             margin: EdgeInsets.symmetric(
               horizontal: mq.width * .04,
               vertical: mq.height * .01,
             ),
             decoration: BoxDecoration(
-              color: Color.fromARGB(255, 221, 245, 255),
+              color: const Color.fromARGB(255, 221, 245, 255),
               border: Border.all(color: Colors.lightBlue),
-              //making border curver
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(30),
                 topRight: Radius.circular(30),
                 bottomRight: Radius.circular(30),
               ),
             ),
-            child: Text(
-              widget.message.msg,
-              style: TextStyle(fontSize: 15, color: Colors.black87),
-            ),
+            child: widget.message.type == Type.text
+                ? Text(
+                    widget.message.msg,
+                    style:
+                        const TextStyle(fontSize: 15, color: Colors.black87),
+                  )
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: mq.width * 0.7,
+                        maxHeight: mq.height * 0.4,
+                      ),
+                      child: kIsWeb
+                          ? Image.network(
+                              widget.message.msg,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.broken_image, size: 60),
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: widget.message.msg,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                              errorWidget: (context, url, error) =>
+                                  const Icon(Icons.broken_image, size: 60),
+                            ),
+                    ),
+                  ),
           ),
         ),
-
-        //image time
         Padding(
           padding: EdgeInsets.only(right: mq.width * .04),
           child: Text(
@@ -63,7 +87,7 @@ class _MessageCardState extends State<MessageCard> {
               context: context,
               time: widget.message.sent,
             ),
-            style: TextStyle(fontSize: 13, color: Colors.black54),
+            style: const TextStyle(fontSize: 13, color: Colors.black54),
           ),
         ),
       ],
@@ -74,53 +98,69 @@ class _MessageCardState extends State<MessageCard> {
   Widget _greenMessage() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
       children: [
-        //message time
         Row(
           children: [
-            //for adding some space
             SizedBox(width: mq.width * .04),
-            //double tick blue icon for message read
             if (widget.message.read.isNotEmpty)
-              Icon(Icons.done_all_rounded, color: Colors.blue, size: 20),
-
-            //for adding some space
-            SizedBox(width: 2),
-
-            //read time
+              const Icon(Icons.done_all_rounded, color: Colors.blue, size: 20),
+            const SizedBox(width: 2),
             Text(
               MyDateUtil.getFormattedTime(
                 context: context,
                 time: widget.message.sent,
               ),
-              style: TextStyle(fontSize: 13, color: Colors.black54),
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
             ),
           ],
         ),
-
-        //message content
         Flexible(
           child: Container(
-            padding: EdgeInsets.all(mq.width * .04),
+            padding: EdgeInsets.all(mq.width * .03),
             margin: EdgeInsets.symmetric(
               horizontal: mq.width * .04,
               vertical: mq.height * .01,
             ),
             decoration: BoxDecoration(
-              color: Color.fromARGB(255, 218, 255, 176),
+              color: const Color.fromARGB(255, 218, 255, 176),
               border: Border.all(color: Colors.lightGreen),
-              //making border curver
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(30),
                 topRight: Radius.circular(30),
                 bottomLeft: Radius.circular(30),
               ),
             ),
-            child: Text(
-              widget.message.msg,
-              style: TextStyle(fontSize: 15, color: Colors.black87),
-            ),
+            child: widget.message.type == Type.text
+                ? Text(
+                    widget.message.msg,
+                    style:
+                        const TextStyle(fontSize: 15, color: Colors.black87),
+                  )
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: mq.width * 0.7,
+                        maxHeight: mq.height * 0.4,
+                      ),
+                      child: kIsWeb
+                          ? Image.network(
+                              widget.message.msg,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.broken_image, size: 60),
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: widget.message.msg,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                              errorWidget: (context, url, error) =>
+                                  const Icon(Icons.broken_image, size: 60),
+                            ),
+                    ),
+                  ),
           ),
         ),
       ],

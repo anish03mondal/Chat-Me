@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:chat_me/models/chat_user.dart';
 import 'package:chat_me/models/message.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class APIs {
@@ -163,7 +163,7 @@ class APIs {
   }
 
   // for sending message
-  static Future<void> sendMessage(ChatUser chatUser, String msg) async {
+  static Future<void> sendMessage(ChatUser chatUser, String msg, Type type) async {
     //message sending time (also used as id)
     final time = DateTime.now().millisecondsSinceEpoch.toString();
 
@@ -172,7 +172,7 @@ class APIs {
       toId: chatUser.id,
       msg: msg,
       read: '',
-      type: Type.text,
+      type: type,
       fromId: user.uid,
       sent: time,
     );
@@ -201,4 +201,41 @@ class APIs {
         .limit(1)
         .snapshots();
   }
+
+  // send chat image
+  static Future<void> sendChatImage(
+  ChatUser chatUser,
+  dynamic fileOrBytes, // File (mobile) or Uint8List (web)
+  {String? fileName}    // required for web
+) async {
+  try {
+    String? imageUrl;
+
+    if (kIsWeb) {
+      // Web: fileOrBytes is Uint8List, fileName is required
+      if (fileOrBytes is Uint8List && fileName != null) {
+        imageUrl = await uploadWebImageToCloudinary(fileOrBytes, fileName);
+      } else {
+        print('❌ Invalid data for web image upload');
+        return;
+      }
+    } else {
+      // Mobile: fileOrBytes is File
+      if (fileOrBytes is File) {
+        imageUrl = await uploadImageToCloudinary(fileOrBytes);
+      } else {
+        print('❌ Invalid file for mobile image upload');
+        return;
+      }
+    }
+
+    if (imageUrl != null) {
+      await sendMessage(chatUser, imageUrl, Type.image);
+    } else {
+      print('❌ Image upload failed');
+    }
+  } catch (e) {
+    print('❌ Error sending chat image: $e');
+  }
+}
 }
