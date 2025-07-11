@@ -4,6 +4,7 @@ import 'package:chat_me/main.dart';
 import 'package:chat_me/models/chat_user.dart';
 import 'package:chat_me/models/message.dart';
 import 'package:chat_me/screens/chat_screen.dart';
+import 'package:chat_me/widgets/dialogs/profile_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
@@ -43,25 +44,31 @@ class _ChatUserCardState extends State<ChatUserCard> {
             if (list.isNotEmpty) _message = list[0];
             return ListTile(
               //leading: CircleAvatar(child: Icon(CupertinoIcons.person)),
-              leading: ClipRRect(
-                borderRadius: BorderRadius.circular(mq.height * .3),
-                child: kIsWeb
-                    ? Image.network(
-                        widget.user.image,
-                        width: mq.height * .055,
-                        height: mq.height * .055,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Icon(Icons.error),
-                      )
-                    : CachedNetworkImage(
-                        width: mq.height * .055,
-                        height: mq.height * .055,
-                        imageUrl: widget.user.image,
-                        placeholder: (context, url) =>
-                            CircularProgressIndicator(),
-                        errorWidget: (context, url, error) => Icon(Icons.error),
-                      ),
+              leading: InkWell(
+                onTap: () {
+                  showDialog(context: context, builder: (_) => ProfileDialog(user: widget.user,));
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(mq.height * .3),
+                  child: kIsWeb
+                      ? Image.network(
+                          widget.user.image,
+                          width: mq.height * .055,
+                          height: mq.height * .055,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Icon(Icons.error),
+                        )
+                      : CachedNetworkImage(
+                          width: mq.height * .055,
+                          height: mq.height * .055,
+                          imageUrl: widget.user.image,
+                          placeholder: (context, url) =>
+                              CircularProgressIndicator(),
+                          errorWidget: (context, url, error) =>
+                              Icon(Icons.error),
+                        ),
+                ),
               ),
 
               title: Text(widget.user.name),
