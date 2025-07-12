@@ -1,11 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:chat_me/models/chat_user.dart';
 import 'package:chat_me/models/message.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'dart:developer';
+import 'dart:math' as math;
+import 'dart:developer' as dev;
+
 
 class APIs {
   // Firebase auth & firestore
@@ -21,6 +27,21 @@ class APIs {
   static const String cloudName = 'dlqncdnx9';
   static const String uploadPreset = 'flutter_unsigned';
 
+  // for accessing firebase messaging (Push Notification)
+  static FirebaseMessaging fMessaging = FirebaseMessaging.instance;
+
+  // for getting firebase messaging token
+  static Future<void> getFirebaseMessagingToken() async {
+    await fMessaging.requestPermission();
+
+    await fMessaging.getToken().then((t) {
+      if (t != null) {
+        me?.pushToken = t;
+        dev.log('Push Token: $t'); 
+      }
+    });
+  }
+
   // 🔍 Check if user exists
   static Future<bool> userExists() async {
     return (await firestore.collection('users').doc(user.uid).get()).exists;
@@ -34,6 +55,9 @@ class APIs {
         .get();
     if (userSnapshot.exists) {
       me = ChatUser.fromJson(userSnapshot.data()!);
+      await getFirebaseMessagingToken();
+      // for setting user status to active
+      APIs.updateActiveStatus(true);
     } else {
       await createUser();
       await getSelfInfo();
@@ -145,24 +169,24 @@ class APIs {
   }
 
   // for getting specific user info
-static Stream<QuerySnapshot<Map<String, dynamic>>> getUserInfo(
-    ChatUser chatUser) {
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getUserInfo(
+    ChatUser chatUser,
+  ) {
     return firestore
         .collection('users')
         .where('id', isEqualTo: chatUser.id)
-        .snapshots();  // Fixed case: snapShots → snapshots
-}
+        .snapshots(); // Fixed case: snapShots → snapshots
+  }
 
-// update online or last active status of user
-static Future<void> updateActiveStatus(bool isOnline) async {
-    await firestore
-        .collection('users')
-        .doc(user.uid)
-        .update({  // Fixed square brackets to curly braces
-            'is_online': isOnline,
-            'last_active': DateTime.now().millisecondsSinceEpoch.toString(),
-        });  // Fixed extra parenthesis
-}
+  // update online or last active status of user
+  static Future<void> updateActiveStatus(bool isOnline) async {
+    await firestore.collection('users').doc(user.uid).update({
+      // Fixed square brackets to curly braces
+      'is_online': isOnline,
+      'last_active': DateTime.now().millisecondsSinceEpoch.toString(),
+      'push_toke': me?.pushToken,
+    }); // Fixed extra parenthesis
+  }
 
   // Chat screen Relaed API **********************
 
@@ -184,7 +208,11 @@ static Future<void> updateActiveStatus(bool isOnline) async {
   }
 
   // for sending message
-  static Future<void> sendMessage(ChatUser chatUser, String msg, Type type) async {
+  static Future<void> sendMessage(
+    ChatUser chatUser,
+    String msg,
+    Type type,
+  ) async {
     //message sending time (also used as id)
     final time = DateTime.now().millisecondsSinceEpoch.toString();
 
@@ -225,38 +253,38 @@ static Future<void> updateActiveStatus(bool isOnline) async {
 
   // send chat image
   static Future<void> sendChatImage(
-  ChatUser chatUser,
-  dynamic fileOrBytes, // File (mobile) or Uint8List (web)
-  {String? fileName}    // required for web
-) async {
-  try {
-    String? imageUrl;
+    ChatUser chatUser,
+    dynamic fileOrBytes, { // File (mobile) or Uint8List (web)
+    String? fileName, // required for web
+  }) async {
+    try {
+      String? imageUrl;
 
-    if (kIsWeb) {
-      // Web: fileOrBytes is Uint8List, fileName is required
-      if (fileOrBytes is Uint8List && fileName != null) {
-        imageUrl = await uploadWebImageToCloudinary(fileOrBytes, fileName);
+      if (kIsWeb) {
+        // Web: fileOrBytes is Uint8List, fileName is required
+        if (fileOrBytes is Uint8List && fileName != null) {
+          imageUrl = await uploadWebImageToCloudinary(fileOrBytes, fileName);
+        } else {
+          print('❌ Invalid data for web image upload');
+          return;
+        }
       } else {
-        print('❌ Invalid data for web image upload');
-        return;
+        // Mobile: fileOrBytes is File
+        if (fileOrBytes is File) {
+          imageUrl = await uploadImageToCloudinary(fileOrBytes);
+        } else {
+          print('❌ Invalid file for mobile image upload');
+          return;
+        }
       }
-    } else {
-      // Mobile: fileOrBytes is File
-      if (fileOrBytes is File) {
-        imageUrl = await uploadImageToCloudinary(fileOrBytes);
-      } else {
-        print('❌ Invalid file for mobile image upload');
-        return;
-      }
-    }
 
-    if (imageUrl != null) {
-      await sendMessage(chatUser, imageUrl, Type.image);
-    } else {
-      print('❌ Image upload failed');
+      if (imageUrl != null) {
+        await sendMessage(chatUser, imageUrl, Type.image);
+      } else {
+        print('❌ Image upload failed');
+      }
+    } catch (e) {
+      print('❌ Error sending chat image: $e');
     }
-  } catch (e) {
-    print('❌ Error sending chat image: $e');
   }
-}
 }
