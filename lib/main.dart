@@ -4,45 +4,63 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'firebase_options.dart';
 
-//global object for accessing device screen size
-late Size
-mq; //media query must be initialized in build function whose parent class must be Material App
+// Global object for accessing device screen size
+late Size mq;
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  WidgetsFlutterBinding.ensureInitialized();  // It sets up Flutter's connection to the engine so you can safely use things like: firebase systemchrome
-  await SystemChrome.setPreferredOrientations([ // setting the orientation of the app
+  // Set preferred orientation
+  await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  await _initializeFirebase();  // to initialize firebase
 
-  
+  // ✅ Set global system UI overlay style (nav bar + status bar)
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
+
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Chat Me',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        appBarTheme: AppBarTheme(
-          iconTheme: IconThemeData(color: Colors.black),
-          centerTitle: true,
-          titleTextStyle: TextStyle(color: Colors.black, fontSize: 19),
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            color: Colors.black,
+            fontSize: 19,
+            fontWeight: FontWeight.w500,
+          ),
+          iconTheme: IconThemeData(color: Colors.black),
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.dark,
+            systemNavigationBarColor: Colors.white,
+            systemNavigationBarIconBrightness: Brightness.dark,
+          ),
         ),
       ),
       home: SplashScreen(),
     );
   }
-}
-
-_initializeFirebase() async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }

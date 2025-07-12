@@ -115,24 +115,26 @@ class _ChatScreenState extends State<ChatScreen> {
 
               // show emojis on keyboard emoji button click & vice versa
               if (_showEmoji)
-                SizedBox(
-                  height: mq.height * .35,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: _showEmoji ? mq.height * 0.35 : 0,
                   child: EmojiPicker(
                     textEditingController: _textController,
                     config: Config(
                       emojiViewConfig: EmojiViewConfig(
                         emojiSizeMax: 32 * (kIsWeb ? 1.0 : 1.3),
-                        columns: 8,
                         backgroundColor: const Color.fromARGB(
                           255,
                           234,
                           248,
                           255,
                         ),
+                        columns: 8,
                       ),
                     ),
                   ),
                 ),
+
               // SizedBox
             ],
           ),
@@ -148,7 +150,9 @@ class _ChatScreenState extends State<ChatScreen> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => ViewProfileScreen(user: widget.user)),
+            MaterialPageRoute(
+              builder: (_) => ViewProfileScreen(user: widget.user),
+            ),
           );
         },
         child: StreamBuilder(
@@ -242,153 +246,107 @@ class _ChatScreenState extends State<ChatScreen> {
   //bottom chat input field
   Widget _chatInput() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      child: Row(
-        children: [
-          // Chat input box with buttons
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Emoji button
-                  IconButton(
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      setState(() {
-                        _showEmoji = !_showEmoji;
-                      });
-                    },
-                    icon: const Icon(
-                      Icons.emoji_emotions,
-                      color: Colors.blueAccent,
-                      size: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: SafeArea(
+        child: Row(
+          children: [
+            // Chat input container
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                margin: const EdgeInsets.only(bottom: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
                     ),
-                  ),
-
-                  // Text input
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      keyboardType: TextInputType.multiline,
-                      maxLines: null,
-                      onTap: () {
-                        if (_showEmoji)
-                          setState(() {
-                            _showEmoji = false;
-                          });
-                      },
-                      decoration: const InputDecoration(
-                        hintText: "Type something...",
-                        hintStyle: TextStyle(color: Colors.blueAccent),
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ),
-
-                  // Gallery (file picker for mobile/web)
-                  IconButton(
-                    onPressed: () async {
-                      if (kIsWeb) {
-                        // Web: Use FilePicker
-                        final result = await FilePicker.platform.pickFiles(
-                          type: FileType.image,
-                        );
-                        if (result != null &&
-                            result.files.single.bytes != null) {
-                          final bytes = result.files.single.bytes!;
-                          final name = result.files.single.name;
-                          await APIs.sendChatImage(
-                            widget.user,
-                            bytes,
-                            fileName: name,
-                          );
-                        }
-                      } else {
-                        // Mobile: Use ImagePicker
-                        final ImagePicker picker = ImagePicker();
-                        final XFile? image = await picker.pickImage(
-                          source: ImageSource.gallery,
-                          imageQuality: 70,
-                        );
-                        if (image != null) {
-                          await APIs.sendChatImage(
-                            widget.user,
-                            File(image.path),
-                          );
-                        }
-                      }
-                    },
-                    icon: const Icon(
-                      Icons.image,
-                      color: Colors.blueAccent,
-                      size: 24,
-                    ),
-                  ),
-
-                  // Camera button (mobile only)
-                  if (!kIsWeb)
+                  ],
+                ),
+                child: Row(
+                  children: [
                     IconButton(
-                      onPressed: () async {
-                        final ImagePicker picker = ImagePicker();
-                        final XFile? image = await picker.pickImage(
-                          source: ImageSource.camera,
-                          imageQuality: 70,
-                        );
-                        if (image != null) {
-                          await APIs.sendChatImage(
-                            widget.user,
-                            File(image.path),
-                          );
-                        }
+                      onPressed: () {
+                        FocusScope.of(context).unfocus();
+                        setState(() => _showEmoji = !_showEmoji);
                       },
                       icon: const Icon(
-                        Icons.camera_alt_rounded,
+                        Icons.emoji_emotions,
                         color: Colors.blueAccent,
-                        size: 24,
                       ),
                     ),
-                ],
+                    Expanded(
+                      child: TextField(
+                        controller: _textController,
+                        keyboardType: TextInputType.multiline,
+                        maxLines: null,
+                        onTap: () {
+                          if (_showEmoji) setState(() => _showEmoji = false);
+                        },
+                        decoration: const InputDecoration(
+                          hintText: "Type something...",
+                          hintStyle: TextStyle(color: Colors.blueAccent),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.image, color: Colors.blueAccent),
+                      onPressed: () async {
+                        // Your image picker logic
+                      },
+                    ),
+                    if (!kIsWeb)
+                      IconButton(
+                        icon: const Icon(
+                          Icons.camera_alt_rounded,
+                          color: Colors.blueAccent,
+                        ),
+                        onPressed: () async {
+                          // Camera logic
+                        },
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          const SizedBox(width: 8),
+            const SizedBox(width: 5),
 
-          // Send button
-          Material(
-            color: Colors.green,
-            shape: const CircleBorder(),
-            child: InkWell(
-              onTap: () {
-                if (_textController.text.isNotEmpty) {
-                  APIs.sendMessage(
-                    widget.user,
-                    _textController.text,
-                    Type.text,
-                  );
-                  _textController.clear();
-                }
-              },
-              borderRadius: BorderRadius.circular(100),
-              child: const Padding(
-                padding: EdgeInsets.all(12),
-                child: Icon(Icons.send, color: Colors.white, size: 26),
+            Material(
+              color: Colors.green,
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: () {
+                  if (_textController.text.isNotEmpty) {
+                    if (_list.isEmpty) {
+                      APIs.sendFirstMessage(
+                        widget.user,
+                        _textController.text,
+                        Type.text,
+                      );
+                    } else {
+                      APIs.sendMessage(
+                        widget.user,
+                        _textController.text,
+                        Type.text,
+                      );
+                    }
+                    _textController.clear();
+                  }
+                },
+                borderRadius: BorderRadius.circular(100),
+                child: const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Icon(Icons.send, color: Colors.white, size: 26),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

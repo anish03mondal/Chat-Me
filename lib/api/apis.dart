@@ -12,7 +12,6 @@ import 'dart:developer';
 import 'dart:math' as math;
 import 'dart:developer' as dev;
 
-
 class APIs {
   // Firebase auth & firestore
   static FirebaseAuth auth = FirebaseAuth.instance;
@@ -37,7 +36,7 @@ class APIs {
     await fMessaging.getToken().then((t) {
       if (t != null) {
         me?.pushToken = t;
-        dev.log('Push Token: $t'); 
+        dev.log('Push Token: $t');
       }
     });
   }
@@ -45,6 +44,29 @@ class APIs {
   // 🔍 Check if user exists
   static Future<bool> userExists() async {
     return (await firestore.collection('users').doc(user.uid).get()).exists;
+  }
+
+  // for adding a chat user for our conversation
+  static Future<bool> addChatUser(String email) async {
+    final data = await firestore
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .get();
+
+    if (data.docs.isNotEmpty && data.docs.first.id != user.uid) {
+      // user exists
+      await firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('my_users')
+          .doc(data.docs.first.id)
+          .set({}); // Added set() to actually create the document
+
+      return true;
+    } else {
+      // user doesn't exist
+      return false;
+    }
   }
 
   // 📥 Get self info
@@ -85,13 +107,41 @@ class APIs {
         .set(chatUser.toJson());
   }
 
-  // 📡 Stream of all users except self
-  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllUsers() {
+  //for getting ids of known users from firestore database
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getMyUserId() {
     return firestore
         .collection('users')
-        .where('id', isNotEqualTo: user.uid)
+        .doc(user.uid)
+        .collection('my_users')
         .snapshots();
   }
+
+  // 📡 Stream of all users except self
+   static Stream<QuerySnapshot<Map<String, dynamic>>> getAllUsers(
+      List<String> userIds) {
+    //log('\nUserIds: $userIds');
+
+    return firestore
+        .collection('users')
+        .where('id',
+            whereIn: userIds.isEmpty
+                ? ['']
+                : userIds) //because empty list throws an error
+        // .where('id', isNotEqualTo: user.uid)
+        .snapshots();
+  }
+
+  // for adding a user to my users when first message is sent
+static Future<void> sendFirstMessage(
+    ChatUser chatUser, String msg, Type type) async {
+    await firestore
+        .collection('users')
+        .doc(chatUser.id)
+        .collection('my_users')
+        .doc(user.uid)
+        .set({}) // Create an empty document or add fields as needed
+        .then((value) => sendMessage(chatUser, msg, type));
+}
 
   // ✏️ Update basic user info (name, about)
   static Future<void> updateUserInfo() async {
