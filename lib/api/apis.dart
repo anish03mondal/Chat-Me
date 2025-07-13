@@ -90,7 +90,7 @@ class APIs {
   static Future<void> createUser() async {
     final time = DateTime.now().microsecondsSinceEpoch.toString();
     final chatUser = ChatUser(
-      about: "Hey I am using We Chat!",
+      about: "Hey I am using Chat Me!",
       createdAt: time,
       email: user.email.toString(),
       id: user.uid,

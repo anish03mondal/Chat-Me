@@ -36,7 +36,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
             await APIs.updateActiveStatus(false);
-
             await APIs.auth.signOut();
 
             final googleSignIn = GoogleSignIn();
@@ -44,12 +43,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
               await googleSignIn.disconnect();
               await googleSignIn.signOut();
             }
-            APIs.auth = FirebaseAuth.instance;
-            if (mounted) {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (route) => false,
+
+            if (!mounted) return;
+
+            if (kIsWeb) {
+              // ✅ Show a snackbar to prompt manual refresh on web
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Logout successful! Please refresh the page.'),
+                  backgroundColor: Colors.blueAccent,
+                ),
               );
+            } else {
+              // ✅ Works fine on mobile
+              Future.delayed(Duration.zero, () {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              });
             }
           },
           icon: const Icon(Icons.logout),
@@ -92,7 +104,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         bottom: 0,
                         right: 0,
                         child: MaterialButton(
-                          onPressed: _showBottomSheet,
+                          onPressed: () async {
+                            if (kIsWeb) {
+                              final result = await FilePicker.platform.pickFiles(
+                                type: FileType.image,
+                              );
+                              if (result != null && result.files.single.bytes != null) {
+                                final bytes = result.files.single.bytes!;
+                                final fileName = result.files.single.name;
+                                final imageUrl =
+                                    await APIs.uploadWebImageToCloudinary(bytes, fileName);
+                                if (imageUrl != null) {
+                                  await APIs.updateProfileImage(imageUrl);
+                                  setState(() => _image = imageUrl);
+                                }
+                              }
+                            } else {
+                              _showBottomSheet();
+                            }
+                          },
                           shape: const CircleBorder(),
                           color: Colors.white,
                           child: const Icon(Icons.edit),
@@ -169,7 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Bottom Sheet for Image Picker
+  // Bottom Sheet for Mobile Only
   void _showBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -204,36 +234,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     fixedSize: Size(mq.width * .3, mq.height * .15),
                   ),
                   onPressed: () async {
-                    if (kIsWeb) {
-                      final result = await FilePicker.platform.pickFiles(
-                        type: FileType.image,
-                      );
-                      if (result != null && result.files.single.bytes != null) {
-                        final bytes = result.files.single.bytes!;
-                        final fileName = result.files.single.name;
-                        final imageUrl = await APIs.uploadWebImageToCloudinary(
-                          bytes,
-                          fileName,
-                        );
-                        if (imageUrl != null) {
-                          await APIs.updateProfileImage(imageUrl);
-                          setState(() => _image = imageUrl);
-                        }
-                      }
-                    } else {
-                      final ImagePicker picker = ImagePicker();
-                      final XFile? image = await picker.pickImage(
-                        source: ImageSource.gallery,
-                      );
-                      if (image != null) {
-                        final file = File(image.path);
-                        final imageUrl = await APIs.uploadImageToCloudinary(
-                          file,
-                        );
-                        if (imageUrl != null) {
-                          await APIs.updateProfileImage(imageUrl);
-                          setState(() => _image = imageUrl);
-                        }
+                    final ImagePicker picker = ImagePicker();
+                    final XFile? image = await picker.pickImage(
+                      source: ImageSource.gallery,
+                    );
+                    if (image != null) {
+                      final file = File(image.path);
+                      final imageUrl = await APIs.uploadImageToCloudinary(file);
+                      if (imageUrl != null) {
+                        await APIs.updateProfileImage(imageUrl);
+                        setState(() => _image = imageUrl);
                       }
                     }
                     if (mounted) Navigator.pop(context);
@@ -249,31 +259,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     fixedSize: Size(mq.width * .3, mq.height * .15),
                   ),
                   onPressed: () async {
-                    if (kIsWeb) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Camera not supported on web.'),
-                          ),
-                        );
+                    final ImagePicker picker = ImagePicker();
+                    final XFile? image = await picker.pickImage(
+                      source: ImageSource.camera,
+                    );
+                    if (image != null) {
+                      final file = File(image.path);
+                      final imageUrl = await APIs.uploadImageToCloudinary(file);
+                      if (imageUrl != null) {
+                        await APIs.updateProfileImage(imageUrl);
+                        setState(() => _image = imageUrl);
                       }
-                    } else {
-                      final ImagePicker picker = ImagePicker();
-                      final XFile? image = await picker.pickImage(
-                        source: ImageSource.camera,
-                      );
-                      if (image != null) {
-                        final file = File(image.path);
-                        final imageUrl = await APIs.uploadImageToCloudinary(
-                          file,
-                        );
-                        if (imageUrl != null) {
-                          await APIs.updateProfileImage(imageUrl);
-                          setState(() => _image = imageUrl);
-                        }
-                      }
-                      if (mounted) Navigator.pop(context);
                     }
+                    if (mounted) Navigator.pop(context);
                   },
                   child: Image.asset('images/camera1.png'),
                 ),
